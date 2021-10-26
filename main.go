@@ -22,14 +22,14 @@ func main() {
 }
 
 type Results struct {
-	ForecastRequestCode string `json:"forecastrequestCForecastRequestCode"`
-	OfficeName          string `json:"officename"`
-	Cityname            string `json:"cityname"`
-	Centers             string `json:"centers"`
-	Offices             string `json:"offices"`
-	Class10s            string `json:"class10s"`
-	Class15s            string `json:"class15s"`
-	Class20s            string `json:"class20s"`
+	ForecastCode string `json:"forecastcode"`
+	OfficeName   string `json:"officename"`
+	Cityname     string `json:"cityname"`
+	Centers      string `json:"centers"`
+	Offices      string `json:"offices"`
+	Class10s     string `json:"class10s"`
+	Class15s     string `json:"class15s"`
+	Class20s     string `json:"class20s"`
 }
 
 func procRequest(w http.ResponseWriter, req *http.Request) {
@@ -50,11 +50,11 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 		res.Centers = parentcode(res.Offices)
 		switch res.Offices {
 		case "014030":
-			res.ForecastRequestCode = "014100"
+			res.ForecastCode = "014100"
 		case "460040":
-			res.ForecastRequestCode = "460100"
+			res.ForecastCode = "460100"
 		default:
-			res.ForecastRequestCode = res.Offices
+			res.ForecastCode = res.Offices
 		}
 		res.OfficeName = toOfficeName(res.Offices)
 		res.Cityname = toCityName(res.Class20s)
