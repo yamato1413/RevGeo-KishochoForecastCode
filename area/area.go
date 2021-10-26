@@ -1,7 +1,7 @@
 package area
 
 import (
-	"rev-kishocho-code/common"
+	"RevGeo-KishochoForecastCode/common"
 )
 
 var areainfomap interface{}

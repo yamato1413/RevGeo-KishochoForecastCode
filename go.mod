@@ -1,4 +1,4 @@
-module rev-kishocho-code
+module RevGeo-KishochoForecastCode
 
 go 1.17
 

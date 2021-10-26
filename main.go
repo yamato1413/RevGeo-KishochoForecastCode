@@ -1,52 +1,108 @@
 package main
 
 import (
+	"RevGeo-KishochoForecastCode/area"
+	"RevGeo-KishochoForecastCode/common"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"rev-kishocho-code/area"
-	"rev-kishocho-code/common"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/koron/go-dproxy"
 )
 
-type Geo struct {
+func main() {
+	r := mux.NewRouter()
+	r.HandleFunc("/lat:{lat}lon:{lon}", procRequest)
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), r))
+}
+
+type Results struct {
+	ForecastRequestCode string `json:"forecastrequestCForecastRequestCode"`
+	OfficeName          string `json:"officename"`
+	Cityname            string `json:"cityname"`
+	Centers             string `json:"centers"`
+	Offices             string `json:"offices"`
+	Class10s            string `json:"class10s"`
+	Class15s            string `json:"class15s"`
+	Class20s            string `json:"class20s"`
+}
+
+func procRequest(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	lat, err := strconv.ParseFloat(vars["lat"], 64)
+	common.ErrLog(err)
+	lon, err := strconv.ParseFloat(vars["lon"], 64)
+	common.ErrLog(err)
+	localcode := latlonToLocalCode(lat, lon)
+
+	var res Results
+	if localcode != "" {
+		citycode := localCodeToCityCode(localcode)
+		res.Class20s = citycode + "00"
+		res.Class15s = parentcode(res.Class20s)
+		res.Class10s = parentcode(res.Class15s)
+		res.Offices = parentcode(res.Class10s)
+		res.Centers = parentcode(res.Offices)
+		switch res.Offices {
+		case "014030":
+			res.ForecastRequestCode = "014100"
+		case "460040":
+			res.ForecastRequestCode = "460100"
+		default:
+			res.ForecastRequestCode = res.Offices
+		}
+		res.OfficeName = toOfficeName(res.Offices)
+		res.Cityname = toCityName(res.Class20s)
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
+type RevGeo struct {
 	Results struct {
 		MuniCd string `json:"muniCd"`
 		Lv01Nm string `json:"lv01Nm"`
 	} `json:"results"`
 }
 
-func latlon_to_localcode(lat, lon float64) string {
-	url := fmt.Sprintf("https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=%v&lon=%v", lat, lon)
-	body, err := common.GetJson(url)
+func latlonToLocalCode(lat, lon float64) string {
+	URL := fmt.Sprintf("https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=%v&lon=%v", lat, lon)
+	body, err := common.GetJson(URL)
 	common.ErrLog(err)
 
-	var g Geo
-	json.Unmarshal(body, &g)
+	var rg RevGeo
+	json.Unmarshal(body, &rg)
 
-	return g.Results.MuniCd
+	return rg.Results.MuniCd
 }
 
-func parentcode(code string) (string, error) {
+func parentcode(code string) string {
 	category := []string{"class20s", "class15s", "class10s", "offices"}
 	areainfo := dproxy.New(area.AreaInfoMap())
 	for _, class := range category {
 		pcode, err := areainfo.M(class).M(code).M("parent").String()
 		if err == nil {
-			return pcode, nil
+			return pcode
 		}
 	}
-	return "", errors.New("NotFound")
+	return ""
 }
 
-func localcode_to_citycode(code string) string {
+func toCityName(citycode string) string {
+	areainfo := dproxy.New(area.AreaInfoMap())
+	name, _ := areainfo.M("class20s").M(citycode).M("name").String()
+	return name
+}
+func toOfficeName(officecode string) string {
+	areainfo := dproxy.New(area.AreaInfoMap())
+	name, _ := areainfo.M("offices").M(officecode).M("name").String()
+	return name
+}
+func localCodeToCityCode(code string) string {
 	// 区レベルの自治体コードを市レベルに直す
 	// 二分探索で近似値検索をしている
 	codes := loadCityCodes()
@@ -88,44 +144,4 @@ func loadCityCodes() []string {
 		cityCodes = append(cityCodes, line[0])
 	}
 	return cityCodes
-}
-
-func main() {
-
-	r := mux.NewRouter()
-	r.HandleFunc("/lat:{lat}lon:{lon}", procRequest)
-	log.Fatal(http.ListenAndServe(":8081", r))
-}
-
-func procRequest(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	lat, _ := strconv.ParseFloat(vars["lat"], 64)
-	lon, _ := strconv.ParseFloat(vars["lon"], 64)
-	localcode := latlon_to_localcode(lat, lon)
-	citycode := localcode_to_citycode(localcode)
-
-	var res results
-	res.Class20s = citycode + "00"
-	res.Class15s, _ = parentcode(res.Class20s)
-	res.Class10s, _ = parentcode(res.Class15s)
-	res.Offices, _ = parentcode(res.Class10s)
-	res.Centers, _ = parentcode(res.Offices)
-	switch res.Offices {
-	case "014030":
-		res.ForecastRequest = "014100"
-	case "460040":
-		res.ForecastRequest = "460100"
-	default:
-		res.ForecastRequest = res.Offices
-	}
-	json.NewEncoder(w).Encode(res)
-}
-
-type results struct {
-	Centers         string `json:"centers"`
-	Offices         string `json:"offices"`
-	Class10s        string `json:"class10s"`
-	Class15s        string `json:"class15s"`
-	Class20s        string `json:"class20s"`
-	ForecastRequest string `json:"forecastrequest"`
 }
