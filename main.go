@@ -17,7 +17,7 @@ import (
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/lat:{lat}lon:{lon}", procRequest)
+	r.HandleFunc("/lat={lat}+lon={lon}", procRequest)
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), r))
 }
 
