@@ -23,7 +23,7 @@ func main() {
 
 type Results struct {
 	ForecastCode string `json:"forecastcode"`
-	OfficeName   string `json:"officename"`
+	PrefName     string `json:"prefname"`
 	Cityname     string `json:"cityname"`
 	Centers      string `json:"centers"`
 	Offices      string `json:"offices"`
@@ -56,7 +56,7 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 		default:
 			res.ForecastCode = res.Offices
 		}
-		res.OfficeName = toOfficeName(res.Offices)
+		res.PrefName = toPrefName(res.Offices)
 		res.Cityname = toCityName(res.Class20s)
 	}
 	json.NewEncoder(w).Encode(res)
@@ -97,7 +97,7 @@ func toCityName(citycode string) string {
 	name, _ := areainfo.M("class20s").M(citycode).M("name").String()
 	return name
 }
-func toOfficeName(officecode string) string {
+func toPrefName(officecode string) string {
 	areainfo := dproxy.New(area.AreaInfoMap())
 	name, _ := areainfo.M("offices").M(officecode).M("name").String()
 	return name
