@@ -42,17 +42,19 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 
 	var res Results
 	if localcode != "" {
-		citycode := localCodeToCityCode(localcode)
+		citycode := toCityCode(localcode)
 		res.Class20s = citycode + "00"
 		res.Class15s = parentcode(res.Class20s)
 		res.Class10s = parentcode(res.Class15s)
 		res.Offices = parentcode(res.Class10s)
 		res.Centers = parentcode(res.Offices)
 		switch res.Offices {
+		// 十勝地方
 		case "014030":
-			res.ForecastCode = "014100"
+			res.ForecastCode = "014100" // 釧路地方
+		// 奄美地方
 		case "460040":
-			res.ForecastCode = "460100"
+			res.ForecastCode = "460100" // 鹿児島県
 		default:
 			res.ForecastCode = res.Offices
 		}
@@ -102,9 +104,10 @@ func toOfficeName(officecode string) string {
 	name, _ := areainfo.M("offices").M(officecode).M("name").String()
 	return name
 }
-func localCodeToCityCode(code string) string {
-	// 区レベルの自治体コードを市レベルに直す
-	// 二分探索で近似値検索をしている
+
+// 区レベルの自治体コードを市レベルに直す
+// 二分探索で近似値検索をしている
+func toCityCode(code string) string {
 	codes := loadCityCodes()
 	left, right := 0, len(codes)-1
 	var mid int
