@@ -40,7 +40,7 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 	common.ErrLog(err)
 	localcode := latlonToLocalCode(lat, lon)
 
-	var res Results
+	res := new(Results)
 	if localcode != "" {
 		citycode := toCityCode(localcode)
 		res.Class20s = citycode + "00"
