@@ -18,7 +18,7 @@ import (
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/lat={lat}+lon={lon}", procRequest)
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), r))
+	log.Fatal(http.ListenAndServe(":80", r))
 }
 
 type Results struct {
@@ -134,7 +134,7 @@ func loadCityCodes() []string {
 	if len(cityCodes) != 0 {
 		return cityCodes
 	}
-	file, err := os.Open("./code.csv")
+	file, err := os.Open("./codes.csv")
 	common.ErrLog(err)
 	defer file.Close()
 
