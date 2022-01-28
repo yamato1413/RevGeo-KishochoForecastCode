@@ -16,6 +16,10 @@
 ```
 https://revgeo-forecastcode.herokuapp.com/lat={lat}+lon={lon}
 ```
+または
+```
+https://udon-yamato1413.com/lat={lat}+lon={lon}
+```
 
 上記のURLの{lat}を緯度に、{lon}を経度に置き換えてhttpリクエストを送ると、以下のようなJSONを返します。
 
