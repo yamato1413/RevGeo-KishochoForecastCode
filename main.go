@@ -18,7 +18,8 @@ import (
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/lat={lat}+lon={lon}", procRequest)
-	log.Fatal(http.ListenAndServe(os.Getenv("PORT"), r))
+	log.Printf("start server.")
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), r))
 }
 
 type Results struct {
@@ -39,6 +40,8 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 	lon, err := strconv.ParseFloat(vars["lon"], 64)
 	common.ErrLog(err)
 	localcode := latlonToLocalCode(lat, lon)
+	log.Printf("recieve request[from:%v] : %v%v", req.RemoteAddr, req.Host, req.RequestURI)
+	log.Printf("could read lat=%v, lon=%v\n", lat, lon)
 
 	res := new(Results)
 	if localcode != "" {
@@ -62,6 +65,8 @@ func procRequest(w http.ResponseWriter, req *http.Request) {
 		res.Cityname = toCityName(res.Class20s)
 	}
 	json.NewEncoder(w).Encode(res)
+	log.Printf("response :")
+	json.NewEncoder(log.Writer()).Encode(res)
 }
 
 type RevGeo struct {
